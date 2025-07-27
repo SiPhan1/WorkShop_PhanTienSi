@@ -1,0 +1,127 @@
+[
+{
+	"uri": "/3-setup/3.1-create-resolver-endpoints/",
+	"title": "Create Route 53 Resolver Endpoints",
+	"tags": [],
+	"description": "",
+	"content": "Create Route 53 Resolver Endpoints Route 53 Resolver Endpoints are essential for enabling DNS query forwarding between AWS and on-premises environments.\nInbound vs Outbound Endpoints Inbound Endpoint: To enable your on-premise DNS system to query Route 53 Resolver for specific DNS zones (such as Private Zones) hosted on Route 53, you need to set up a Route 53 Inbound Endpoint. This Inbound Endpoint serves as a link for other services to request domain name resolution from Route 53. When you create an Inbound Endpoint, AWS generates an elastic network interface (ENI) in each specified availability zone (AZ) to handle incoming DNS queries. Outbound Endpoint: To enable the Route 53 Resolver to forward DNS queries for domains hosted outside of Route 53. When you create a Route 53 Outbound Endpoint, AWS will generate an elastic network interface (ENI) in each specified Availability Zone (AZ). Steps to Create Endpoints 1. Open the Route 53 Resolver Console Navigate to: Route 53 Resolver Console 2. Create an Inbound Endpoint Choose Inbound Endpoint Provide: Name: inbound-resolver VPC: HybridDNS-VPC Subnets: Choose 2 private subnets IPs: Use auto-assigned or custom IPs Associate a Security Group that allows DNS (port 53) Result 3. Create an Outbound Endpoint Choose Outbound Endpoint Provide: Name: outbound-resolver VPC: HybridDNS-VPC Subnets: Choose 2 private subnets IPs: Use auto-assigned or custom IPs Associate the same Security Group Notes DNS queries will use UDP/TCP 53 Make sure your on-prem firewall allows traffic from these resolver IPs If EC2 can\u0026rsquo;t access external DNS, check the NACL or security group. Store the IPs of your endpoints for use in conditional forwarding (step 3.2) "
+},
+{
+	"uri": "/2-prerequiste/2.1-createec2/",
+	"title": "Create EC2 &amp; VPC",
+	"tags": [],
+	"description": "",
+	"content": "Create EC2 and VPC for Hybrid DNS Testing To begin setting up a Hybrid DNS architecture, we start by creating a foundational AWS environment including VPC, subnets, and an EC2 instance for testing DNS resolution.\nSteps to Follow 1. Create a New VPC Go to VPC Console Click Create VPC → choose VPC only Provide: Name: HybridDNS-VPC IPv4 CIDR block: 10.0.0.0/16 2. Create Subnets Create 2 private subnets:\n10.0.1.0/24 (AZ1) 10.0.2.0/24 (AZ2) Create 1 public subnet:\n10.0.0.0/24 (AZ) 3. Create and Attach Internet Gateway Go to Internet Gateways, create a new one Attach it to the VPC 4. Create Route Tables Create a public route table Add route: 0.0.0.0/0 via the Internet Gateway Associate it with the public subnet 5. Launch EC2 Instance Navigate to EC2 Console Choose Amazon Linux 2 or Windows Server (optional) Launch the instance in one of the private subnets Create key hybird-key Attach a Security Group allowing SSH (Linux) or RDP (Windows) Ensure internet access via NAT Gateway or test via VPC endpoints EC2 Testing Once launched, connect via Session Manager or Bastion host if used.\nThis instance will be used to run DNS queries using dig or nslookup amazon.com.\nStep 1 : Choosen EC2 and Connect Step 2 : Run nslookup amazon.com "
+},
+{
+	"uri": "/1-introduce/",
+	"title": "Introduction",
+	"tags": [],
+	"description": "",
+	"content": "HYBRID DNS MANAGEMENT WITH ROUTE 53 Why Hybrid DNS? Modern enterprises increasingly adopt hybrid cloud architectures — combining on-premises infrastructure with cloud services. One critical challenge in this setup is name resolution: ensuring that resources in AWS and on-premises networks can resolve each other’s domain names reliably, securely, and efficiently.\nA traditional DNS setup often breaks in hybrid environments due to mismatched name zones, routing complexities, and security boundaries.\nObjective of This Guide This documentation provides a hands-on approach to building a hybrid DNS architecture using Amazon Route 53 Resolver, with key goals:\nEnable bidirectional name resolution between AWS and on-premises Ensure split-horizon DNS for public/private zone isolation Implement conditional forwarding rules for fine-grained DNS control Set up monitoring and security alerting Provide disaster recovery via Route 53 health checks and failover This is ideal for teams needing to bridge their on-prem DNS infrastructure with cloud-based workloads while maintaining compliance, performance, and observability.\nKey Design Components Route 53 Inbound Resolver Endpoints – Let on-prem DNS query AWS names Route 53 Outbound Resolver Endpoints – Let AWS query on-prem DNS zones Private \u0026amp; Public Hosted Zones – Support split-horizon DNS DNS Forwarding Rules – Handle zone-specific resolution CloudWatch Logs – Track DNS queries \u0026amp; behaviors GuardDuty DNS Protection – Detect threats based on query patterns Benefits in a Real-World Environment Seamless resolution across hybrid networks DNS-based threat visibility and detection Improved latency via optimized routing Failover-ready architecture with health checks Clear operational playbook for setup, validation \u0026amp; troubleshooting What’s Inside You’ll walk through each of these components, set up AWS and on-prem connectivity, and validate end-to-end DNS resolution. By the end, you’ll be equipped with a robust DNS solution suited for hybrid environments.\n"
+},
+{
+	"uri": "/",
+	"title": "Introduction",
+	"tags": [],
+	"description": "",
+	"content": "HYBRID DNS MANAGEMENT WITH ROUTE 53 Overview This documentation provides a comprehensive guide to designing, deploying, and managing a Hybrid DNS architecture using AWS Route 53 and on-premises DNS infrastructure.\nThe architecture includes features such as conditional forwarding, split-horizon DNS, monitoring with CloudWatch, and disaster recovery (DR) support.\nKey Capabilities Two-way DNS resolution between AWS and on-premises Conditional forwarding rules for specific domain zones Split-horizon DNS with private and public hosted zones Monitoring with CloudWatch \u0026amp; DNS query logs GuardDuty integration for DNS threat detection Operational procedures and troubleshooting runbooks Disaster recovery setup with Route 53 health checks Content Structure Introduction Prerequisite DNS Resolver Setup Validation Troubleshooting Operational Guide Cleanup Architecture Diagram "
+},
+{
+	"uri": "/3-setup/3.2-setup-forwarding-rules/",
+	"title": "Setup Forwarding Rules",
+	"tags": [],
+	"description": "",
+	"content": "Setup Conditional Forwarding Rules This step configures rules that forward DNS queries from AWS to specific on-premises domains.\nWhat Are Forwarding Rules? Conditional forwarding allows Route 53 Resolver to direct queries for specific domain names to external DNS servers (e.g., your on-premises DNS). Example: All requests for example.com' go to 192.168.1.10. Create Forwarding Rules Go to Route 53 Resolver Console Choose Rules → Create rule Provide: Rule type: Forward Domain name: example.com Target IPs: IP of your on-prem DNS server Endpoint: Use your outbound endpoint Sample Rule Domain Forward to IP Endpoint example.com 192.168.1.10 outbound-resolver Screenshot Attaching a rule to a VPC During the creation step or after creating the rule\u0026gt; select Associate VPC Choosen VPC: HybridDNS-VPC Notes You can add multiple rules for different domains. Make sure the on-prem DNS server allows queries from AWS resolver IPs. Attach the correct rule to the VPC for the rule to work "
+},
+{
+	"uri": "/2-prerequiste/2.2-security-group/",
+	"title": "Configure Security Group for DNS",
+	"tags": [],
+	"description": "",
+	"content": "Configure Security Group for DNS Traffic This step focuses on allowing DNS traffic between EC2 instances, Route 53 Resolver Endpoints, and your on-premises DNS servers.\nCreate Security Group Security group name: DNS-SG Describe : Allow DNS queries (UDP/TCP 53) VPC: HybridDNS-VPC Inbound Rules Type Protocol Port Source Custom UDP Rule UDP 53 10.0.0.0/16 Custom TCP Rule TCP 53 10.0.0.0/16 Outbound Rules Type Protocol Port Destination All Traffic All All 0.0.0.0/0 Assigning an SG to an EC2 test Revisiting EC2 \u0026gt; Actions \u0026gt; Networking \u0026gt; Change Security Groups Assign more DNS-SG You can restrict the source/destination CIDRs to your on-prem or AWS subnets more strictly for better security.\nNotes These rules are critical for enabling successful DNS query forwarding across environments. If using custom DNS servers on-prem, ensure firewalls also allow DNS ports (53 TCP/UDP). "
+},
+{
+	"uri": "/2-prerequiste/",
+	"title": "Prerequisite",
+	"tags": [],
+	"description": "",
+	"content": "PREPARATION In this step, we will need to prepare:\nContent to Prepare: Create a VPC and subnets Configure security groups for DNS traffic Set up an EC2 client for DNS query testing Deploy inbound and outbound Route 53 Resolver endpoints Create forwarding rules to on-prem DNS Set up private and public hosted zones "
+},
+{
+	"uri": "/3-setup/3.3-hosted-zones/",
+	"title": "Set Up Hosted Zones",
+	"tags": [],
+	"description": "",
+	"content": "Set Up Public \u0026amp; Private Hosted Zones Hosted Zones in Route 53 are containers for DNS records. In a hybrid setup, you may use both public and private hosted zones depending on the use case.\nPrivate Hosted Zones (PHZ) Used for internal domain resolution within VPC. Not accessible from the internet. Example: internal.example.com Steps: Go to Route 53 Console Click Create hosted zone Domain name: internal.example.com Type: Private Hosted Zone Associate with HybridDNS-VPC Public Hosted Zones (Optional) Used for internet-facing services. Example: hybriddns.example.com Steps are similar to private zones, just select Public Hosted Zone.\nExample Record Set (Private) Record Type Name Value A test.internal 10.0.1.5 Screenshot About Hosted Private Zone Notes Records in Private Zones only resolve inside the associated VPC. Ensure that the VPC has DNS resolution and hostnames enabled. "
+},
+{
+	"uri": "/3-setup/",
+	"title": "Setup",
+	"tags": [],
+	"description": "",
+	"content": "DNS RESOLVER SETUP This section contains detailed steps to configure your Hybrid DNS architecture by combining AWS Route 53 and your on-premises DNS systems.\nWhat You Will Do Create Route 53 Resolver Endpoints (inbound and outbound) Configure Conditional Forwarding Rules Set up Private/Public Hosted Zones Enable Monitoring and Query Logging Prepare Failover \u0026amp; Disaster Recovery Each step includes screenshots, AWS Console guidance, and validation instructions.\n"
+},
+{
+	"uri": "/2-prerequiste/2.3-test-dns-ec2/",
+	"title": "DNS Testing After SG Configuration",
+	"tags": [],
+	"description": "",
+	"content": "DNS Query Testing Execute the order again: nslookup amazon.com The results show that the corresponding IP is active DNS. Install Tools SSH into the EC2 and install DNS tools:\nsudo yum install -y bind-utils "
+},
+{
+	"uri": "/4-validation/",
+	"title": "4. Validation",
+	"tags": [],
+	"description": "",
+	"content": "Validate Your Hybrid DNS Setup This section walks you through testing your DNS resolution across AWS and on-premises to ensure everything is functioning properly.\nValidation Steps 1. Connect to EC2 Instance Use Session Manager or SSH to access the EC2 instance deployed in the private subnet. 2. Test Internal Domain Resolution (Private Hosted Zone) Check that the DNS server running on the local machine (localhost - 127.0.0.1) is answering the app.internal.example.com domain query. 3. Testing from another EC2 (via resolver rule) Correctly check the DNS (Conditional Forwarding) to on-prem forwarding rule. 4. Test DNS in outbound Queries from EC2 in the VPC (in the private subnet) Through Outbound Endpoint Forward to on-prem DNS or destination address in the rule And get feedback results dig app.internal.example.com @127.0.0.1 (2) nslookup google.com (3) dig app.internal.example.com @10.0.0.2 (4) "
+},
+{
+	"uri": "/3-setup/3.4-logging-monitoring/",
+	"title": "Enable Logging and Monitoring",
+	"tags": [],
+	"description": "",
+	"content": "Enable Logging and Monitoring for DNS Activity Logging and monitoring are essential to troubleshoot and secure DNS operations in your hybrid environment.\nEnable Route 53 Resolver Query Logging Go to Route 53 Resolver Console Choose Query logging → Create query logging configuration Enter: Name: LogHybrid Destination: CloudWatch Logs, S3, or Kinesis Select the VPC to associate with logging Logging Destinations Destination Use Case CloudWatch Logs Real-time monitoring \u0026amp; alerting S3 Long-term storage \u0026amp; analysis Kinesis Real-time streaming/forwarding Enable CloudWatch Metrics \u0026amp; Alarms Go to CloudWatch Console Create alarms based on DNS query count, errors, or unusual spikes Example: Alarm when NXDOMAIN responses exceed threshold Screenshot Example Tips Use CloudWatch Insights to search DNS logs Set up Amazon GuardDuty to detect suspicious DNS activity Tag all logging resources clearly for cost tracking "
+},
+{
+	"uri": "/5-troubleshooting/",
+	"title": "5. Troubleshooting",
+	"tags": [],
+	"description": "",
+	"content": "Troubleshooting Hybrid DNS Issues This section outlines common DNS problems in hybrid environments and how to resolve them effectively, focusing on DNS resolution failures, on-prem integration, and health check diagnostics.\nCommon Issues and Fixes 1. EC2 Instances Cannot Resolve DNS Symptoms:\nDNS queries from EC2 return errors like NXDOMAIN or SERVFAIL.\nPossible Causes:\nDNS support or hostname resolution is disabled at the VPC level. Resolution:\nNavigate to VPC → Actions → Modify DNS settings Ensure both options below are enabled: Enable DNS resolution Enable DNS hostnames 2. On-Premise Domains Are Not Resolving Symptoms:\nInternal domains (e.g., app.internal.example.com) fail to resolve from AWS VPC.\nPossible Causes:\nRoute 53 Resolver endpoints are not properly configured. Forwarding rule is pointing to incorrect on-prem DNS IP. Security Group or NACL is blocking port 53. Resolution:\nVerify Outbound Resolver Endpoints are deployed in the correct (private) subnets. Check that the forwarding rule points to the correct on-prem DNS IP. Ensure Security Groups and NACLs allow traffic on UDP/TCP port 53. 3. Route 53 Health Check Is Always Failing Symptoms:\nHealth check status remains Unhealthy.\nPossible Causes:\nThe target is not responding or responding incorrectly. Incorrect health check protocol (e.g., using HTTP instead of TCP). Resolution:\nConfirm the target endpoint is reachable and responds properly. Use CloudWatch metrics and logs to investigate failures. Ensure firewall rules and SGs are not blocking health check traffic. Diagnostic Commands Use the following commands to help test and troubleshoot DNS issues:\n# Query domain using system\u0026#39;s default resolver dig app.internal.example.com # Query domain via specific resolver IP (e.g., outbound endpoint) dig app.internal.example.com @10.0.0.2 # Test basic public DNS resolution nslookup google.com "
+},
+{
+	"uri": "/3-setup/3.5-failover-dr/",
+	"title": "Failover and Disaster Recovery Setup",
+	"tags": [],
+	"description": "",
+	"content": "Configuring Failover and Disaster Recovery (DR) This section provides step-by-step guidance on how to configure High Availability (HA) and Disaster Recovery (DR) for your hybrid DNS setup using AWS Route 53.\nStep 1: Configure Health Check in Route 53 Go to Route 53 Console\nFrom the left menu, choose:\nHealth Checks → Create Health Check\nFill in the details:\nField Recommended Value Name OnPrem-DNS-HealthCheck What to monitor Endpoint Specify endpoint - IP address 192.168.1.10 (your on-prem DNS IP) - Protocol TCP or HTTP (based on your DNS setup) Request interval 30 seconds (default) Failure threshold 3 (after 3 failed attempts, it\u0026rsquo;s considered unhealthy) Click Create Health Check to complete the setup.\n(Optional): Link this health check to a failover DNS record in the next step.\nStep 2: Enable DNS Failover Records Go to Route 53 → Hosted Zones Choose your hosted zone (e.g., dns.hybrid.local) Create two A records with the same name: Primary record:\nName: dns.hybrid.local Value: 192.168.1.10 Routing Policy: Failover Failover type: Primary Health Check: attach the one from Step 1 Secondary record:\nName: dns.hybrid.local Value: 10.0.1.5 Routing Policy: Failover Failover type: Secondary Health Check: enabled if desired DNS Record Example Type Name IP Address Routing Policy Role Health Check A dns.hybrid.local 192.168.1.10 Failover Primary Yes A dns.hybrid.local 10.0.1.5 Failover Secondary Yes Step 3: Test the Failover Temporarily stop or disconnect the on-prem DNS service to simulate failure From a testing EC2 instance (or client in VPC), run: dig dns.hybrid.local nslookup dns.hybrid.local "
+},
+{
+	"uri": "/6-operational-guide/",
+	"title": "6. Operating the DNS Hybrid System",
+	"tags": [],
+	"description": "",
+	"content": "Operating the DNS Hybrid System This section provides guidelines for daily operations, monitoring, maintenance, access control, and backup practices for managing the hybrid DNS setup.\nDaily Operations Monitor DNS query logs using CloudWatch Logs. Check Health Check statuses in Route 53. Analyze unusual DNS behavior (e.g., failed queries, repetitive lookups). Clean up unused records or hosted zones regularly. Access Control (IAM) Apply the principle of least privilege to DNS administrators.\nSuggested IAM Policy for DNS Management: { \u0026#34;Effect\u0026#34;: \u0026#34;Allow\u0026#34;, \u0026#34;Action\u0026#34;: [ \u0026#34;route53:ChangeResourceRecordSets\u0026#34;, \u0026#34;route53:GetHostedZone\u0026#34;, \u0026#34;route53:ListHostedZones\u0026#34; ], \u0026#34;Resource\u0026#34;: \u0026#34;*\u0026#34; } "
+},
+{
+	"uri": "/7-cleanup/",
+	"title": "7. Cleanup",
+	"tags": [],
+	"description": "",
+	"content": "Clean Up Resources After completing the Hybrid DNS setup and testing, it\u0026rsquo;s essential to clean up all unused AWS resources to avoid unexpected charges and maintain a secure, tidy environment.\n1. Delete DNS Records \u0026amp; Hosted Zones Go to Route 53 → Hosted Zones Select the hosted zone (e.g., internal.example.com) Delete all record sets except NS and SOA Then delete the Hosted Zone itself 2. Delete Resolver Endpoints \u0026amp; Rules Go to Route 53 → Resolver Delete the following: Inbound Endpoint Custom IP addresses (if manually assigned) Outbound Endpoint All Resolver Rules and their associations Query Logging Configurations If any logging is still running → Stop first, then delete 3. Delete CloudWatch Logs \u0026amp; Alarms Go to CloudWatch → Log Groups: Delete resolver query logs (e.g., /aws/route53/resolver) Go to CloudWatch → Alarms: Delete any custom alarms created for Route 53 Health Checks 4. Terminate EC2 Instances \u0026amp; Remove VPC Go to EC2 Console Stop and Terminate DNS testing EC2 instances Make sure associated EBS volumes are also deleted (if unnecessary) Go to VPC Console: Delete: The HybridDNS-VPC Associated Subnets(Untick select subnets and save) Route Tables Internet Gateway NAT Gateway (to avoid high costs) Any unused Security Groups 5. IAM Roles \u0026amp; Permissions Remove IAM roles and policies used during testing Review remaining Route 53 permissions and restrict if no longer needed 6. Remove Other Resources (Optional) If you used:\nS3 buckets for logging → delete them Lambda functions for automation → delete them Use AWS Billing / Cost Explorer to verify that:\nNo hidden or unused services remain active "
+},
+{
+	"uri": "/categories/",
+	"title": "Categories",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "/tags/",
+	"title": "Tags",
+	"tags": [],
+	"description": "",
+	"content": ""
+}]

@@ -1,0 +1,127 @@
+[
+{
+	"uri": "/vi/3-setup/3.1-create-resolver-endpoints/",
+	"title": "Tạo Route 53 Resolver Endpoints",
+	"tags": [],
+	"description": "",
+	"content": "Tạo Route 53 Resolver Endpoints Route 53 Resolver Endpoints là thành phần then chốt để định tuyến truy vấn DNS giữa AWS và hệ thống on-prem.\nInbound và Outbound Endpoint Inbound Endpoint: Để cho phép hệ thống DNS on-premise của bạn có thể truy vấn Route 53 Resolver cho bất kỳ DNS zones nào (ví dụ: Private Zones) được host trên Route 53, bạn cần tạo Route 53 Inbound Endpoint. Inbound Endpoint là cầu nối cho các dịch vụ khác truy vấn Route 53 để phân giải tên miền. Khi bạn tạo Inbound Endpoint, AWS sẽ tạo một elastic network interface (ENI) trong mỗi availability zone (AZ) mà bạn chỉ định sẽ nhận các truy vấn DNS đi vào. Outbound Endpoint: Để cho phép Route 53 Resolver chuyển tiếp các truy vấn DNS đối với tên miền được đặt trên hệ thống ngoài của Route 53. Khi bạn tạo một Outbound Endpoint trong Route 53, AWS sẽ tự động tạo một Elastic Network Interface (ENI) trong mỗi Availability Zone (AZ) mà bạn chỉ định. Các bước tạo Endpoint 1. Mở Route 53 Resolver Console Truy cập: Route 53 Resolver Console 2. Tạo Inbound Endpoint Chọn Inbound Endpoint Nhập thông tin: Tên: inbound-resolver VPC: HybridDNS-VPC Subnet: chọn 2 subnet private IP: Dùng auto hoặc IP tùy chọn Gán Security Group cho phép DNS (port 53) Kết quả 3. Tạo Outbound Endpoint Chọn Outbound Endpoint Nhập thông tin: Tên: outbound-resolver VPC: HybridDNS-VPC Subnet: chọn 2 subnet private IP: Dùng auto hoặc IP tùy chọn Gán Security Group giống ở bước trên Lưu ý DNS sử dụng UDP/TCP port 53 Hệ thống on-prem phải mở firewall cho IP của resolver này Nếu EC2 không thể truy cập DNS ngoài, hãy kiểm tra NACL hoặc security group. Ghi lại IP để cấu hình ở bước tiếp theo (3.2) "
+},
+{
+	"uri": "/vi/2-prerequiste/2.1-createec2/",
+	"title": "Tạo EC2 &amp; VPC",
+	"tags": [],
+	"description": "",
+	"content": "Tạo EC2 và VPC để kiểm thử DNS Bước đầu tiên để triển khai kiến trúc DNS lai là tạo một môi trường cơ bản trên AWS bao gồm VPC, Subnet và máy chủ EC2 để kiểm thử.\nCác bước thực hiện 1. Tạo VPC mới Truy cập VPC Console Nhấn Create VPC → chọn VPC only Cấu hình: Tên: HybridDNS-VPC IPv4 CIDR: 10.0.0.0/16 2. Tạo Subnet Tạo 2 subnet riêng tư:\n10.0.1.0/24 (AZ1) 10.0.2.0/24 (AZ2) Tạo 1 subnet công khai:\n10.0.0.0/24 (AZ) 3. Gắn Internet Gateway Vào Internet Gateways → tạo mới và gắn với VPC 4. Tạo Route Table Route table công khai: thêm route 0.0.0.0/0 qua IGW Gán route table này cho subnet công khai 5. Khởi tạo EC2 Instance Vào EC2 Console Chọn Amazon Linux 2 (hoặc Windows nếu muốn) Launch instance vào 1 trong các subnet riêng tư Tạo Key hybird-key Gán Security Group cho phép SSH (Linux) hoặc RDP (Windows) Đảm bảo EC2 có thể truy cập internet thông qua NAT Gateway hoặc VPC Endpoint Kiểm thử với EC2 Sau khi EC2 được khởi tạo, bạn có thể kết nối qua Session Manager hoặc Bastion host, và thực hiện truy vấn DNS bằng lệnh dig hoặc nslookup amazon.com.\nBước 1 : CHọn EC2 và Connect Bước 2 : Chạy lệnh nslookup amazon.com "
+},
+{
+	"uri": "/vi/1-introduce/",
+	"title": "Giới thiệu",
+	"tags": [],
+	"description": "",
+	"content": "QUẢN LÝ HYBRID DNS VỚI ROUTE 53 Tại sao cần Hybrid DNS? Trong xu hướng chuyển đổi số hiện nay, nhiều doanh nghiệp áp dụng mô hình hạ tầng lai (hybrid infrastructure) — kết hợp giữa hệ thống tại chỗ (on-premises) và dịch vụ cloud như AWS. Vấn đề lớn trong mô hình này là việc phân giải tên miền (DNS) giữa hai môi trường.\nHệ thống DNS truyền thống thường không đủ linh hoạt và bảo mật để xử lý các truy vấn từ nhiều nguồn, dẫn đến lỗi phân giải tên, độ trễ cao hoặc mất kết nối.\nMục tiêu của tài liệu này Tài liệu hướng dẫn từng bước để xây dựng kiến trúc DNS kết hợp giữa AWS và on-prem, tập trung vào:\nThiết lập phân giải tên 2 chiều giữa on-prem và AWS Cấu hình split-horizon DNS để tách biệt vùng nội bộ và vùng công khai Tạo luật forward theo điều kiện để quản lý chính xác vùng tên miền Kết nối hệ thống giám sát và phát hiện mối đe dọa DNS Hỗ trợ khả năng khôi phục thảm họa (Disaster Recovery) qua kiểm tra tình trạng DNS Thành phần kiến trúc chính Inbound Resolver Endpoint – Cho phép DNS on-prem truy vấn các tên miền AWS Outbound Resolver Endpoint – Cho phép tài nguyên AWS truy vấn DNS nội bộ Private \u0026amp; Public Hosted Zones – Phân tách truy vấn nội bộ và công khai Conditional Forwarding Rules – Điều hướng theo hậu tố tên miền CloudWatch Logs – Ghi log và phân tích truy vấn DNS GuardDuty DNS Protection – Phát hiện truy vấn đáng ngờ Lợi ích thực tế Kết nối phân giải tên liền mạch giữa các môi trường Nâng cao bảo mật và phát hiện bất thường qua DNS Tối ưu tốc độ truy vấn bằng định tuyến hợp lý Sẵn sàng khôi phục khi gặp sự cố với health checks Có hướng dẫn vận hành, kiểm thử và xử lý sự cố rõ ràng Nội dung tài liệu Bạn sẽ được hướng dẫn từng bước để thiết lập mạng, cấu hình Route 53, kết nối với hệ thống DNS nội bộ, và xác minh toàn bộ quy trình. Sau khi hoàn thành, bạn sẽ có một mô hình DNS kết hợp ổn định và bảo mật cao.\n"
+},
+{
+	"uri": "/vi/",
+	"title": "Giới thiệu",
+	"tags": [],
+	"description": "",
+	"content": "QUẢN LÝ HYBRID DNS VỚI ROUTE 53 Tổng quan Tài liệu này cung cấp hướng dẫn toàn diện về cách xây dựng, triển khai và quản lý kiến trúc Hybrid DNS kết hợp giữa hệ thống DNS nội bộ và dịch vụ Route 53 Resolver của AWS.\nGiải pháp bao gồm các tính năng như: conditional forwarding, split-horizon DNS, giám sát qua CloudWatch, và hỗ trợ khôi phục thảm họa (DR).\nTính năng chính Phân giải DNS hai chiều giữa AWS và hệ thống nội bộ Forward có điều kiện theo tên miền cụ thể Split-horizon DNS với cả public \u0026amp; private hosted zone Giám sát DNS bằng CloudWatch, log truy vấn Tích hợp GuardDuty phát hiện bất thường DNS Hướng dẫn vận hành \u0026amp; runbook xử lý sự cố Khôi phục thảm họa với health check và failover Route 53 Cấu trúc nội dung Giới thiệu Chuẩn bị Cài đặt Resolver và Split-DNS Kiểm tra \u0026amp; Xác minh Xử lý sự cố Hướng dẫn vận hành Xóa tài nguyên Sơ đồ kiến trúc hệ thống "
+},
+{
+	"uri": "/vi/3-setup/3.2-setup-forwarding-rules/",
+	"title": "Cấu hình Forwarding Rules",
+	"tags": [],
+	"description": "",
+	"content": "Cấu hình chuyển tiếp DNS có điều kiện (Forwarding Rules) Bước này giúp định tuyến các truy vấn DNS từ AWS đến các tên miền cụ thể tại hệ thống on-prem.\nForwarding Rules là gì? Forwarding Rules cho phép Route 53 Resolver chuyển tiếp các truy vấn DNS đến DNS server bên ngoài (ví dụ: máy chủ DNS on-prem). Ví dụ: Tất cả yêu cầu tên miền example.com sẽ được gửi đến 192.168.1.10. Các bước cấu hình Truy cập Route 53 Resolver Console Chọn Rules → Create rule Điền thông tin: Rule type: Forward Domain: example.com IP đích: địa chỉ DNS server on-prem Endpoint: sử dụng Outbound Endpoint Ví dụ Domain Chuyển đến IP Endpoint example.com 192.168.1.10 outbound-resolver Hình minh họa Gắn rule vào VPC Trong bước tạo hoặc sau khi tạo rule \u0026gt; chọn Associate VPC Chọn VPC: HybridDNS-VPC Ghi chú Có thể tạo nhiều rule cho các tên miền khác nhau. Đảm bảo firewall on-prem cho phép truy vấn DNS từ IP của resolver AWS. Gắn rule đúng với VPC để rule hoạt động "
+},
+{
+	"uri": "/vi/2-prerequiste/2.2-security-group/",
+	"title": "Cấu hình Security Group cho DNS",
+	"tags": [],
+	"description": "",
+	"content": "Cấu hình Security Group cho luồng DNS Bước này đảm bảo EC2 và các thành phần DNS (Route 53 Resolver hoặc DNS on-prem) có thể giao tiếp thông qua cổng 53.\nTạo Security Group Security group name: DNS-SG Mô tả: Cho phép truy vấn DNS (UDP/TCP 53) VPC: HybridDNS-VPC Luồng vào (Inbound) Loại Giao thức Cổng Nguồn Custom UDP Rule UDP 53 10.0.0.0/16 Custom TCP Rule TCP 53 10.0.0.0/16 Luồng ra (Outbound) Loại Giao thức Cổng Đích All Traffic All All 0.0.0.0/0 Gán SG cho EC2 kiểm thử Truy cập lại EC2 \u0026gt; Actions \u0026gt; Networking \u0026gt; Change Security Groups Gán thêm DNS-SG Bạn có thể hạn chế CIDR nguồn/đích đối với mạng con tại chỗ hoặc AWS nghiêm ngặt hơn để bảo mật tốt hơn.\nGhi chú Đảm bảo tường lửa on-prem cũng mở cổng 53. Có thể giới hạn phạm vi CIDR để tăng tính bảo mật. "
+},
+{
+	"uri": "/vi/2-prerequiste/",
+	"title": "Chuẩn bị",
+	"tags": [],
+	"description": "",
+	"content": "Trong bước này, bạn cần chuẩn bị các nội dung sau:\nNội dung cần chuẩn bị: Tạo VPC và các subnet Cấu hình security group cho luồng DNS Tạo máy EC2 để kiểm thử truy vấn DNS Tạo các endpoint inbound và outbound cho Route 53 Resolver Tạo các quy tắc chuyển tiếp đến DNS on-prem Thiết lập các hosted zone riêng tư và công khai "
+},
+{
+	"uri": "/vi/3-setup/",
+	"title": "Thiết lập hệ thống DNS",
+	"tags": [],
+	"description": "",
+	"content": "CẤU HÌNH DNS RESOLVER Phần này hướng dẫn chi tiết cách triển khai hệ thống DNS lai (Hybrid DNS) giữa AWS Route 53 và máy chủ DNS on-premises của bạn.\nBạn sẽ thực hiện: Tạo Route 53 Resolver Endpoints (inbound và outbound) Cấu hình Luồng chuyển tiếp DNS (Conditional Forwarding) Thiết lập Hosted Zones (private/public) Bật giám sát và ghi log truy vấn DNS Triển khai phương án khôi phục sự cố và chuyển đổi dự phòng (DR) Mỗi bước đều kèm ảnh minh họa, chỉ dẫn qua AWS Console và cách xác minh kết quả.\n"
+},
+{
+	"uri": "/vi/3-setup/3.3-hosted-zones/",
+	"title": "Thiết lập Hosted Zones",
+	"tags": [],
+	"description": "",
+	"content": "Thiết lập Public \u0026amp; Private Hosted Zones Hosted Zones trong Route 53 là nơi chứa các bản ghi DNS. Trong mô hình DNS lai, ta có thể sử dụng cả Hosted Zone riêng tư (Private) và Hosted Zone công khai (Public).\nHosted Zone Riêng tư (PHZ) Dùng để phân giải tên miền nội bộ trong VPC. Không truy cập được từ internet. Ví dụ: internal.example.com Các bước thực hiện: Truy cập Route 53 Console Chọn Create hosted zone Domain name: internal.example.com Type: Private Hosted Zone Liên kết với VPC HybridDNS-VPC Hosted Zone Công khai (Tuỳ chọn) Dùng cho các dịch vụ hướng internet. Ví dụ: hybriddns.example.com Tạo tương tự như Hosted Zone riêng tư, chỉ cần chọn Public Hosted Zone.\nVí dụ bản ghi (Private) Loại bản ghi Tên Giá trị IP A test.internal 10.0.1.5 Hình minh họa về Hosted Zone Riêng tư Ghi chú Bản ghi trong Private Zone chỉ phân giải được bên trong VPC. Kiểm tra VPC đã bật DNS resolution và DNS hostname. "
+},
+{
+	"uri": "/vi/2-prerequiste/2.3-test-dns-ec2/",
+	"title": "Kiểm thử DNS sau cấu hình SG",
+	"tags": [],
+	"description": "",
+	"content": "Kiểm thử truy vấn DNS Thực hiện lại lệnh: nslookup amazon.com Kết quả hiển thị IP tương ứng là DNS hoạt động. Cài đặt công cụ DNS Sau khi SSH vào máy EC2, chạy lệnh sau để cài công cụ kiểm tra DNS:\nsudo yum install -y bind-utils "
+},
+{
+	"uri": "/vi/4-validation/",
+	"title": "4. Kiểm tra hoạt động",
+	"tags": [],
+	"description": "",
+	"content": "Kiểm tra hệ thống DNS Hybrid Phần này hướng dẫn cách kiểm thử hệ thống DNS lai giữa AWS và on-prem.\nCác bước kiểm thử 1. Truy cập EC2 Instance Dùng Session Manager hoặc SSH để vào EC2 trong subnet riêng. 2. Kiểm tra phân giải miền nội bộ (Private Hosted Zone) Kiểm tra xem DNS server đang chạy tại máy cục bộ (localhost - 127.0.0.1) có trả lời truy vấn tên miền app.internal.example.com hay không. 3. Kiểm tra từ EC2 khác (qua resolver rule) Kiểm tra chính xác quy tắc chuyển tiếp DNS (Conditional Forwarding) tới on-prem. 4. Kiểm tra DNS ở outbound Truy vấn từ EC2 trong VPC (ở private subnet) Thông qua Outbound Endpoint Chuyển tiếp đến DNS on-prem hoặc địa chỉ đích trong rule Và nhận được kết quả phản hồi dig app.internal.example.com @127.0.0.1 (2) nslookup google.com (3) dig app.internal.example.com @10.0.0.2 (4) "
+},
+{
+	"uri": "/vi/3-setup/3.4-logging-monitoring/",
+	"title": "Bật Logging và Monitoring",
+	"tags": [],
+	"description": "",
+	"content": "Bật ghi log và giám sát truy vấn DNS Việc ghi log và giám sát là cần thiết để theo dõi, xử lý sự cố và bảo mật hệ thống DNS trong kiến trúc hybrid.\nBật ghi log truy vấn DNS trong Route 53 Truy cập Route 53 Resolver Console Chọn Query logging → Create query logging configuration Nhập: Tên: LogHybrid Đích ghi log: CloudWatch Logs, S3, hoặc Kinesis Chọn VPC mà bạn muốn ghi log truy vấn Các đích ghi log Đích ghi log Trường hợp sử dụng CloudWatch Logs Giám sát và cảnh báo theo thời gian thực S3 Lưu trữ lâu dài, phân tích dữ liệu Kinesis Stream dữ liệu theo thời gian thực Bật CloudWatch Metrics \u0026amp; Alarms Truy cập CloudWatch Console Tạo cảnh báo (alarm) dựa trên số lượng truy vấn DNS, lỗi hoặc đột biến Ví dụ: Báo động nếu số lượng phản hồi NXDOMAIN vượt ngưỡng Hình minh họa Mẹo Dùng CloudWatch Insights để tìm kiếm log DNS Kết hợp GuardDuty để phát hiện hoạt động DNS đáng ngờ Gắn tag rõ ràng cho tài nguyên để dễ quản lý chi phí "
+},
+{
+	"uri": "/vi/5-troubleshooting/",
+	"title": "5. Khắc phục sự cố",
+	"tags": [],
+	"description": "",
+	"content": "Khắc phục sự cố DNS trong mô hình Hybrid Phần này trình bày các sự cố DNS thường gặp trong môi trường lai (hybrid) và cách xử lý hiệu quả, bao gồm lỗi phân giải tên miền, kết nối on-prem, và giám sát qua Health Check.\nCác lỗi thường gặp và cách xử lý 1. EC2 không phân giải được tên miền Hiện tượng:\nKhi truy vấn DNS từ EC2 trả về lỗi NXDOMAIN, SERVFAIL, hoặc không phản hồi.\nNguyên nhân có thể:\nVPC chưa bật tính năng phân giải DNS hoặc hostname. Cách khắc phục:\nTruy cập VPC → Actions → Modify DNS settings Đảm bảo bật cả hai tùy chọn sau: Enable DNS resolution Enable DNS hostnames 2. Không phân giải được tên miền on-premise Hiện tượng:\nTừ EC2 trong VPC, không truy vấn được domain như app.internal.example.com.\nNguyên nhân có thể:\nChưa triển khai đúng endpoint cho Route 53 Resolver. Luật chuyển tiếp (forwarding rule) chưa trỏ đúng IP DNS on-prem. Security Group hoặc NACL đang chặn cổng DNS. Cách khắc phục:\nKiểm tra đã tạo đúng Outbound Resolver Endpoint tại subnet private. Kiểm tra forwarding rule có trỏ đúng IP máy chủ DNS on-prem. Mở cổng 53 (TCP/UDP) trong Security Group và NACL. 3. Health Check luôn báo lỗi Hiện tượng:\nHealth check trong Route 53 luôn ở trạng thái Unhealthy.\nNguyên nhân có thể:\nĐích kiểm tra không phản hồi. Đang dùng sai loại kiểm tra (HTTP thay vì TCP). Cách khắc phục:\nĐảm bảo endpoint có phản hồi đúng với loại kiểm tra đã chọn. Dùng CloudWatch Metrics/Logs để phân tích lỗi chi tiết. Kiểm tra firewall hoặc SG có chặn traffic kiểm tra không. Lệnh chẩn đoán Dùng các lệnh sau để kiểm tra DNS:\n# Truy vấn domain qua resolver mặc định dig app.internal.example.com # Truy vấn domain qua IP cụ thể của outbound resolver dig app.internal.example.com @10.0.0.2 # Kiểm tra phân giải DNS công khai nslookup google.com "
+},
+{
+	"uri": "/vi/3-setup/3.5-failover-dr/",
+	"title": "Chuyển đổi dự phòng và Khôi phục thảm họa",
+	"tags": [],
+	"description": "",
+	"content": "Thiết lập Chuyển đổi Dự phòng và DR Phần này hướng dẫn từng bước cấu hình tính sẵn sàng cao (High Availability) và khôi phục thảm họa (Disaster Recovery) cho hệ thống DNS lai với Route 53. Mặc dù không có ảnh chụp màn hình minh họa, các hướng dẫn dưới đây sẽ giúp bạn dễ dàng thực hiện theo.\nTruy cập Route 53 Console\nChọn từ menu bên trái:\nHealth Checks → Create Health Check\nĐiền các thông tin:\nTrường Giá trị đề xuất Name OnPrem-DNS-HealthCheck What to monitor Endpoint Specify endpoint - IP address 192.168.1.10 (IP DNS on-prem) - Protocol TCP hoặc HTTP (tùy dịch vụ DNS) Request interval 30 seconds (mặc định) Failure threshold 3 (tức 3 lần lỗi liên tiếp) Nhấn Create Health Check để hoàn tất.\n(Tuỳ chọn): Liên kết health check này với bản ghi DNS failover trong bước tiếp theo.\nBước 2: Tạo bản ghi DNS dạng Failover Vào Route 53 → Hosted zones Chọn hosted zone chứa tên miền bạn cần cấu hình (VD: dns.hybrid.local) Tạo 2 bản ghi loại A có cùng tên: Bản ghi chính (Primary):\nName: dns.hybrid.local Value: 192.168.1.10 Routing Policy: Failover Failover record type: Primary Health check: chọn Health Check bạn đã tạo ở bước trên Bản ghi dự phòng (Secondary):\nName: dns.hybrid.local Value: 10.0.1.5 Routing Policy: Failover Failover record type: Secondary Health check: nên bật để đảm bảo cả hệ thống dự phòng cũng được giám sát Ví dụ bảng cấu hình Loại Tên Giá trị IP Routing Policy Vai trò Health Check A dns.hybrid.local 192.168.1.10 Failover Primary Có A dns.hybrid.local 10.0.1.5 Failover Secondary Có Bước 3: Kiểm tra hoạt động chuyển đổi Tắt hoặc ngắt mạng máy chủ DNS on-prem Sử dụng một EC2 (hoặc máy chủ trong VPC) để kiểm tra kết quả phân giải tên miền bằng lệnh: dig dns.hybrid.local nslookup dns.hybrid.local "
+},
+{
+	"uri": "/vi/6-operational-guide/",
+	"title": "6. Vận hành hệ thống",
+	"tags": [],
+	"description": "",
+	"content": "Vận hành hệ thống DNS Hybrid Phần này hướng dẫn cách vận hành, giám sát, bảo trì và kiểm soát truy cập cho hệ thống DNS Hybrid trong môi trường thực tế.\nVận hành hàng ngày Theo dõi log truy vấn DNS thông qua CloudWatch Logs. Kiểm tra trạng thái các Health Check trong Route 53. Phân tích các bất thường trong truy vấn DNS (ví dụ: lỗi phân giải, truy vấn lặp). Dọn dẹp các record hoặc hosted zone không còn sử dụng. Quản lý truy cập (IAM) Đảm bảo nguyên tắc least privilege – người quản trị chỉ có quyền cần thiết để vận hành.\nGợi ý IAM Policy cho quản trị DNS: { \u0026#34;Effect\u0026#34;: \u0026#34;Allow\u0026#34;, \u0026#34;Action\u0026#34;: [ \u0026#34;route53:ChangeResourceRecordSets\u0026#34;, \u0026#34;route53:GetHostedZone\u0026#34;, \u0026#34;route53:ListHostedZones\u0026#34; ], \u0026#34;Resource\u0026#34;: \u0026#34;*\u0026#34; } "
+},
+{
+	"uri": "/vi/7-cleanup/",
+	"title": "7. Dọn dẹp tài nguyên",
+	"tags": [],
+	"description": "",
+	"content": "Dọn Dẹp Tài Nguyên Sau khi hoàn tất việc triển khai hoặc thử nghiệm hệ thống DNS lai, bạn cần dọn dẹp các tài nguyên không còn sử dụng để tránh phát sinh chi phí không cần thiết và đảm bảo bảo mật môi trường.\n1. Xóa Bản Ghi DNS \u0026amp; Hosted Zone Truy cập Route 53 → Hosted Zones Chọn Hosted Zone (ví dụ: internal.example.com) Xóa tất cả bản ghi trừ NS và SOA Sau đó xóa toàn bộ Hosted Zone 2. Xóa Resolver Endpoint \u0026amp; Rules Truy cập Route 53 → Resolver Thực hiện các bước sau: Xóa Inbound Endpoint Xóa địa chỉ IP tuỳ chỉnh nếu đã gán Xóa Outbound Endpoint Xóa tất cả Resolver Rules và liên kết rule Xóa cấu hình Query Logging Nếu có logging còn chạy → Stop trước, sau đó mới xóa 3. Xóa Log \u0026amp; Cảnh Báo CloudWatch Vào CloudWatch → Log Groups: Xóa log truy vấn resolver (ví dụ: /aws/route53/resolver) Vào CloudWatch → Alarms: Xóa các cảnh báo tùy chỉnh liên quan đến Health Check 4. Xóa EC2 \u0026amp; VPC Vào EC2 Console Stop và Terminate các EC2 dùng để kiểm thử DNS Đảm bảo xóa cả EBS volumes nếu không dùng nữa Vào VPC Console: Xóa: VPC HybridDNS-VPC Các subnet (bỏ tick chọn các subnet và lưu) Route tables Internet Gateway NAT Gateway (nếu tạo – để tiết kiệm chi phí) Các Security Group không còn sử dụng 5. Xóa Vai Trò \u0026amp; Chính Sách IAM Xóa các IAM role và policy tạo riêng cho mục đích thử nghiệm Rà soát lại quyền truy cập Route 53 → thu hẹp nếu không cần nữa 6. Xóa Các Dịch Vụ Khác (Tuỳ chọn) Nếu có sử dụng:\nS3 bucket để lưu log → Xóa Lambda function cho tự động hóa → Xóa Truy cập AWS Billing / Cost Explorer để kiểm tra xem:\nCòn dịch vụ nào đang âm thầm tiêu tốn chi phí không "
+},
+{
+	"uri": "/vi/categories/",
+	"title": "Categories",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "/vi/tags/",
+	"title": "Tags",
+	"tags": [],
+	"description": "",
+	"content": ""
+}]

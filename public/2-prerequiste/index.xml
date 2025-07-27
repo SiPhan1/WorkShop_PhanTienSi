@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Prerequisite on AWS System Manager</title>
+    <link>/2-prerequiste/</link>
+    <description>Recent content in Prerequisite on AWS System Manager</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Fri, 06 Dec 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="/2-prerequiste/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Create EC2 &amp; VPC</title>
+      <link>/2-prerequiste/2.1-createec2/</link>
+      <pubDate>Fri, 06 Dec 2024 00:00:00 +0000</pubDate>
+      <guid>/2-prerequiste/2.1-createec2/</guid>
+      <description>&lt;h1 id=&#34;create-ec2-and-vpc-for-hybrid-dns-testing&#34;&gt;Create EC2 and VPC for Hybrid DNS Testing&lt;/h1&gt;&#xA;&lt;p&gt;To begin setting up a Hybrid DNS architecture, we start by creating a foundational AWS environment including VPC, subnets, and an EC2 instance for testing DNS resolution.&lt;/p&gt;&#xA;&lt;hr&gt;&#xA;&lt;h3 id=&#34;steps-to-follow&#34;&gt;Steps to Follow&lt;/h3&gt;&#xA;&lt;h4 id=&#34;1-create-a-new-vpc&#34;&gt;1. Create a New VPC&lt;/h4&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Go to &lt;a href=&#34;https://console.aws.amazon.com/vpc&#34;&gt;VPC Console&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;Click &lt;strong&gt;Create VPC&lt;/strong&gt; → choose &lt;strong&gt;VPC only&lt;/strong&gt;&lt;/li&gt;&#xA;&lt;li&gt;Provide:&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Name: &lt;code&gt;HybridDNS-VPC&lt;/code&gt;&lt;/li&gt;&#xA;&lt;li&gt;IPv4 CIDR block: &lt;code&gt;10.0.0.0/16&lt;/code&gt;&#xA;&lt;img src=&#34;/images/prerequisite/vpc.png&#34; alt=&#34;VPC&#34;&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h4 id=&#34;2-create-subnets&#34;&gt;2. Create Subnets&lt;/h4&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&#xA;&lt;p&gt;Create &lt;strong&gt;2 private subnets&lt;/strong&gt;:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;code&gt;10.0.1.0/24&lt;/code&gt; (AZ1)&#xA;&lt;img src=&#34;/images/prerequisite/Subnetprivate1.png&#34; alt=&#34;Subnetprivate1&#34;&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;code&gt;10.0.2.0/24&lt;/code&gt; (AZ2)&#xA;&lt;img src=&#34;/images/prerequisite/subnetprivate2.png&#34; alt=&#34;SubnetPrivate2&#34;&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;&#xA;&lt;p&gt;Create &lt;strong&gt;1 public subnet&lt;/strong&gt;:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Configure Security Group for DNS</title>
+      <link>/2-prerequiste/2.2-security-group/</link>
+      <pubDate>Fri, 06 Dec 2024 00:00:00 +0000</pubDate>
+      <guid>/2-prerequiste/2.2-security-group/</guid>
+      <description>&lt;h1 id=&#34;configure-security-group-for-dns-traffic&#34;&gt;Configure Security Group for DNS Traffic&lt;/h1&gt;&#xA;&lt;p&gt;This step focuses on allowing DNS traffic between EC2 instances, Route 53 Resolver Endpoints, and your on-premises DNS servers.&lt;/p&gt;&#xA;&lt;hr&gt;&#xA;&lt;h3 id=&#34;create-security-group&#34;&gt;Create Security Group&lt;/h3&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Security group name: DNS-SG&lt;/li&gt;&#xA;&lt;li&gt;Describe : Allow DNS queries (UDP/TCP 53)&lt;/li&gt;&#xA;&lt;li&gt;VPC:  &lt;strong&gt;HybridDNS-VPC&lt;/strong&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;&lt;img src=&#34;/images/prerequisite/securitygroup.png&#34; alt=&#34;securitygroup&#34;&gt;&lt;/p&gt;&#xA;&lt;h3 id=&#34;inbound-rules&#34;&gt;Inbound Rules&lt;/h3&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th&gt;Type&lt;/th&gt;&#xA;          &lt;th&gt;Protocol&lt;/th&gt;&#xA;          &lt;th&gt;Port&lt;/th&gt;&#xA;          &lt;th&gt;Source&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;Custom UDP Rule&lt;/td&gt;&#xA;          &lt;td&gt;UDP&lt;/td&gt;&#xA;          &lt;td&gt;53&lt;/td&gt;&#xA;          &lt;td&gt;10.0.0.0/16&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;Custom TCP Rule&lt;/td&gt;&#xA;          &lt;td&gt;TCP&lt;/td&gt;&#xA;          &lt;td&gt;53&lt;/td&gt;&#xA;          &lt;td&gt;10.0.0.0/16&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;&#xA;&lt;p&gt;&lt;img src=&#34;/images/prerequisite/inbound.png&#34; alt=&#34;inbound&#34;&gt;&lt;/p&gt;&#xA;&lt;hr&gt;&#xA;&lt;h3 id=&#34;outbound-rules&#34;&gt;Outbound Rules&lt;/h3&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th&gt;Type&lt;/th&gt;&#xA;          &lt;th&gt;Protocol&lt;/th&gt;&#xA;          &lt;th&gt;Port&lt;/th&gt;&#xA;          &lt;th&gt;Destination&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;All Traffic&lt;/td&gt;&#xA;          &lt;td&gt;All&lt;/td&gt;&#xA;          &lt;td&gt;All&lt;/td&gt;&#xA;          &lt;td&gt;0.0.0.0/0&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;&#xA;&lt;p&gt;&lt;img src=&#34;/images/prerequisite/outbound.png&#34; alt=&#34;outbound&#34;&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>DNS Testing After SG Configuration</title>
+      <link>/2-prerequiste/2.3-test-dns-ec2/</link>
+      <pubDate>Fri, 06 Dec 2024 00:00:00 +0000</pubDate>
+      <guid>/2-prerequiste/2.3-test-dns-ec2/</guid>
+      <description>&lt;h1 id=&#34;dns-query-testing&#34;&gt;DNS Query Testing&lt;/h1&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Execute the order again:&#xA;&lt;code&gt;nslookup amazon.com&lt;/code&gt;&lt;/li&gt;&#xA;&lt;li&gt;The results show that the corresponding IP is active DNS.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;&lt;img src=&#34;/images/prerequisite/testDNS.png&#34; alt=&#34;testDNS&#34;&gt;&lt;/p&gt;&#xA;&lt;hr&gt;&#xA;&lt;h3 id=&#34;install-tools&#34;&gt;Install Tools&lt;/h3&gt;&#xA;&lt;p&gt;SSH into the EC2 and install DNS tools:&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo yum install -y bind-utils&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+  </channel>
+</rss>
